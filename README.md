@@ -19,4 +19,4 @@ The following web resources were useful in the initial development stages of thi
 2. W. Cen, R. Hoppe, N. Gu. Fast and accurate determination of 3D temperature distribution using fraction-step semi-implicit method
 AIP Adv., 6 (2016), Article 095305, https://doi.org/10.1063/1.4962665
 
-3. Sandeep Sahijpal, Thermal evolution of non-spherical asteroids in the early solar system, Icarus, Volume 362, (2021). https://doi.org/10.1016/j.icarus.2021.114439.
+3. S. Sahijpal, Thermal evolution of non-spherical asteroids in the early solar system, Icarus, Volume 362, (2021). https://doi.org/10.1016/j.icarus.2021.114439.
