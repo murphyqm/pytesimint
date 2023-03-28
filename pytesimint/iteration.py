@@ -6,7 +6,7 @@ by murphyqm
 
 """
 import numpy as np
-import metintrusion.define_matrix as dm
+from . import define_matrix as dm
 
 
 def example_func():

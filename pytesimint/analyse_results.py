@@ -1,11 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-from metintrusion import define_matrix as dm
-from metintrusion import effective_diffusivity as ed
-from metintrusion import iteration as it
+
 import numpy.ma as ma
 import pickle
+
+from . import define_matrix as dm
+from . import effective_diffusivity as ed
+from . import iteration as it
+
 
 
 def filtering(job_no, params, results_folder, iterations=[3, 48, 96, 120]):
