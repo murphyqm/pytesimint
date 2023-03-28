@@ -9,7 +9,7 @@ import numpy as np
 
 # from context import define_matrix as dm
 import setup_path
-import metintrusion.define_matrix as dm
+import pytesimint.define_matrix as dm
 
 import pytest
 

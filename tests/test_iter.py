@@ -10,7 +10,7 @@ import numpy as np
 # from context import iteration as it
 
 import setup_path
-import metintrusion.iteration as it
+import pytesimint.iteration as it
 import pytest
 
 

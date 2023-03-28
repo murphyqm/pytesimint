@@ -10,7 +10,7 @@ by murphyqm
 # from context import effective_diffusivity as ed
 
 import setup_path
-import metintrusion.effective_diffusivity as ed
+import pytesimint.effective_diffusivity as ed
 import pytest
 
 
