@@ -1,13 +1,35 @@
-import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
+""" Result Analysis Script
 
+This module allows the user to filter and analyse results produced by the
+PytesiMINT model, taking 3D heatmaps and filtering them according to
+experimentally obtained estimates (see details, Murphy Quinlan et al., 2023),
+before saving output as pickles. These can then be loaded and compiled into
+a human-readable dataframe.
+
+This tool accepts .npy binary files and parameter files saved as .csv as
+inputs.
+
+The module contains the following functions:
+
+    - filtering
+    - temp_save_param
+    - load_param_pickles
+    - param_dict_to_df
+    - timeseries
+    - filtering_checking_bounds
+    - timeseries
+    - filtering_expand_bounds
+    - param_dict_to_df_checking_bounds
+
+
+"""
+
+import numpy as np
+import pandas as pd
 import numpy.ma as ma
 import pickle
 
 from . import define_matrix as dm
-from . import effective_diffusivity as ed
-from . import iteration as it
 
 
 
