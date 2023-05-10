@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
+"""Define Matrix Script
+
 Created on 23/06/2021
 by murphyqm
 
@@ -113,9 +114,7 @@ class TridiagMatrixCNNeumann:
 @jit(nopython=True)
 def initialise_r_vector(dt, dx, diffusivities):
     """Returns an array of r values given spatially varying diffusivity."""
-    # r_values = np.asarray([(D * dt) / (dx ** 2.0) for D in diffusivities])
-    r_values = (diffusivities * dt) / (dx ** 2)
-    return r_values
+    return (diffusivities * dt) / (dx ** 2)
 
 
 @jit(nopython=True)
@@ -332,24 +331,6 @@ class LinearSystemCN:
             self.RHS = self.B.mat.dot(self.u[1:-1]) + self.b + self.b2
 
 
-# not used?
-@jit(nopython=True)
-def cn_solver(system, x, nsteps, u):
-    solution = np.zeros((x.size, nsteps))
-    solution[:, 0] = u
-
-    c = 0
-    for j in range(1, nsteps):
-        #print(j)
-        system.solve(j)
-        solution[:, j] = system.u
-    return solution
-
-
-# @timefn
-# @jit(nopython=True)
-# numba error: - argument 0: Cannot determine Numba type of <class
-# 'metintrusion.define_matrix.LinearSystemCN'>
 # this is used
 def cn_solver_zero(system: object, x, nsteps, u):
     solution = np.zeros((x.size, nsteps+1))

@@ -21,7 +21,8 @@ The module contains the following functions:
     - filtering_expand_bounds
     - param_dict_to_df_checking_bounds
 
-
+Created 2022
+by murphyqm
 """
 
 import numpy as np
