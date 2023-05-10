@@ -2,6 +2,12 @@
 # -*- coding: utf-8 -*-
 """Define Matrix Script
 
+This module builds the component parts of the matrices required for the
+Crank-Nicolson method.
+
+This module contains functions to build diagonals, tridiagonal matrices,
+3D grids, and to apply Dirichlt or Neumann boundary conditions.
+
 Created on 23/06/2021
 by murphyqm
 
@@ -65,8 +71,6 @@ class TridiagMatrixCNDirichlet:
         return self.mat.todense()
 
 
-# @timefn
-# this is used
 class TridiagMatrixCNNeumann:
     """Sparse matrix object for Crank-Nicolson scheme w/Neumann bcs."""
 
@@ -76,10 +80,14 @@ class TridiagMatrixCNNeumann:
 
         Parameters
         ----------
-        main
-        upper
-        lower
-        N
+        main : np.array
+            Main diagonal of the matrix
+        upper : np.array
+            Upper diagonal of the matrix
+        lower : np.array
+            Lower diagonal of the matrix
+        N : int
+            Shape of the matrix (N X N)
         """
         self.main = main
         self.upper = upper
@@ -91,7 +99,7 @@ class TridiagMatrixCNNeumann:
         lower_band[:] = lower[1:]
         lower_band[-1] = lower_band[-1] * 2.0
         upper_band = np.zeros(N - 1)
-        upper_band[:] = upper[0:-1]
+        upper_band[:] = upper[:-1]
         upper_band[0] = upper_band[0] * 2.0
         self.mat = scipy.sparse.diags(
             diagonals=[main_band, lower_band, upper_band],
@@ -108,22 +116,23 @@ class TridiagMatrixCNNeumann:
         return self.mat.todense()
 
 
-# @njit(nopython=True)
-# @timefn
-# this is used
+
 @jit(nopython=True)
 def initialise_r_vector(dt, dx, diffusivities):
-    """Returns an array of r values given spatially varying diffusivity."""
+    """Returns an array of r values given spatially varying diffusivity.
+
+    No discretisation provided
+    """
     return (diffusivities * dt) / (dx ** 2)
 
 
 @jit(nopython=True)
 def spvr_1d_initialise_r_vector(dt, dx, diffusivities):
-    """Returns an array of r values given spatially varying diffusivity."""
+    """Returns an array of r values given spatially varying diffusivity.
+
+    For 1D, with discretisation
+    """
     r_values = (diffusivities * dt) / (dx ** 2)
-    # r_values = np.insert(r_values,
-    #                      [0, len(r_values)],
-    #                      [r_values[0], r_values[-1]])
     r_values = np.concatenate(
         (np.asarray([r_values[0]]),
          r_values,
@@ -133,44 +142,35 @@ def spvr_1d_initialise_r_vector(dt, dx, diffusivities):
 
 @jit(nopython=True)
 def spvr_3d_initialise_r_vector(dt, dx, diffusivities):
-    """Returns an array of r values given spatially varying diffusivity."""
+    """Returns an array of r values given spatially varying diffusivity.
+
+    For 3D, with discretisation.
+    """
     val = diffusivities[0, 0, 0]
     dim0 = diffusivities.shape[0] + 2
     dim1 = diffusivities.shape[1] + 2
     dim2 = diffusivities.shape[2] + 2
     new_array = np.full((dim0, dim1, dim2), val)
     new_array[1:-1, 1:-1, 1:-1] = diffusivities
-    r_values = (new_array * dt) / (dx ** 2)
-    return r_values
+    return (new_array * dt) / (dx ** 2)
 
-# @timefn
-# this is used
+
 @jit(nopython=True)
 def initialise_diagonals(r_values, N):
-    """Returns arrays of diagonal values for matrices given r arrays."""
-    # A matrix: 2 + 2r on the diagonal, -r on the upper and lower
-    # B matrix: 2 - 2r on the diagonal, +r on the upper and lower
+    """Returns arrays of diagonal values for matrices given r arrays.
+
+    A matrix: 2 + 2r on the diagonal, -r on the upper and lower
+    B matrix: 2 - 2r on the diagonal, +r on the upper and lower
+    """
     if len(r_values) != N:
         print("Warning, diffusivity array is wrong length, please check.")
-    # main_diag_A = np.asarray([2.0+(2.0*r) for r in r_values])
-    # upper_diag_A = np.asarray([-1.0 * r for r in r_values])
-    # lower_diag_A = np.asarray([-1.0 * r for r in r_values])
-    # main_diag_B = np.asarray([2.0 - (2.0 * r) for r in r_values])
-    # upper_diag_B = np.asarray([r for r in r_values])
-    # lower_diag_B = np.asarray([r for r in r_values])
 
-    # main_diag_A = np.asarray([2.0+(2.0*r) for r in r_values])
     main_diag_A = 2.0 + (2.0 * r_values)
-    # upper_diag_A = np.asarray([-1.0 * r for r in r_values])
     upper_diag_A = -1 * r_values
-    # lower_diag_A = np.asarray([-1.0 * r for r in r_values])
     lower_diag_A = -1 * r_values
 
-    # main_diag_B = np.asarray([2.0 - (2.0 * r) for r in r_values])
     main_diag_B = 2.0 - (2.0 * r_values)
-    # upper_diag_B = np.asarray([r for r in r_values])
     upper_diag_B = r_values
-    # lower_diag_B = np.asarray([r for r in r_values])
     lower_diag_B = r_values
 
     return (main_diag_A,
@@ -183,9 +183,12 @@ def initialise_diagonals(r_values, N):
 
 @jit(nopython=True)
 def spvr_initialise_diagonals(r_values, N):
-    """Returns arrays of diagonal values for matrices given r arrays."""
-    # A matrix: 2 + 2r on the diagonal, -r on the upper and lower
-    # B matrix: 2 - 2r on the diagonal, +r on the upper and lower
+    """Returns arrays of diagonal values for matrices given r arrays.
+
+    For spatially varying diffusivity and variable r values.
+    A matrix: 2 + 2r on the diagonal, -r on the upper and lower
+    B matrix: 2 - 2r on the diagonal, +r on the upper and lower
+    """
     if len(r_values) != N+2:
         print("Warning, diffusivity array is wrong length, please check.")
         print("Diffusivity array should include 2 points outside domain.")
@@ -216,9 +219,6 @@ def spvr_initialise_diagonals(r_values, N):
             lower_diag_B)
 
 
-# @jit
-# @timefn
-# this is used
 def initialise_matrices_var_dif(main_diag_A,
             upper_diag_A,
             lower_diag_A,
@@ -254,9 +254,6 @@ def initialise_matrices_var_dif(main_diag_A,
     return A, B
 
 
-# @jit(nopython=True)
-# @timefn
-# this is used
 def IBCs_Dirichlet(initial_values, r_values, N):
     """Returns boundary arrays for fixed temp boundary conditions."""
     u = np.asarray(initial_values)
@@ -267,7 +264,6 @@ def IBCs_Dirichlet(initial_values, r_values, N):
     return u, b1, b2
 
 
-# this is used
 @jit(nopython=True)
 def IBCs_Neumann_zero_flux(initial_values, r_values, N):
     """Returns boundary arrays for zero flux boundary conditions."""
@@ -277,7 +273,6 @@ def IBCs_Neumann_zero_flux(initial_values, r_values, N):
     return u, b1, b2
 
 
-# this is used
 class LinearSystemCN:
     """Simple Linear System object for Crank-Nicolson scheme."""
 
@@ -331,7 +326,6 @@ class LinearSystemCN:
             self.RHS = self.B.mat.dot(self.u[1:-1]) + self.b + self.b2
 
 
-# this is used
 def cn_solver_zero(system: object, x, nsteps, u):
     solution = np.zeros((x.size, nsteps+1))
     solution[:, 0] = u
@@ -343,10 +337,6 @@ def cn_solver_zero(system: object, x, nsteps, u):
     return solution[:, j]
 
 
-# new functions from jupyter notebook examples
-
-# this is used
-# @timefn
 @jit(nopython=True)
 def define_grid_3d(Nx, Ny, Nz, Lx, Ly, Lz):
     x = np.linspace(0, Lx, Nx)
@@ -356,15 +346,11 @@ def define_grid_3d(Nx, Ny, Nz, Lx, Ly, Lz):
     return x, y, z, blank_vol
 
 
-# @timefn
 @jit(nopython=True)
 def spacing(n_grid_points, grid_length):
-    d = grid_length/(n_grid_points - 1)
-    return d
+    return grid_length/(n_grid_points - 1)
 
 
-# this is used
-# @timefn
 @jit(nopython=True)
 def set_grid_values_3d(x, y, z, blank_vol, x1, x2, y1, y2, z1, z2, int_value, mant_value):
     new_vol = np.full_like(blank_vol, mant_value)
@@ -376,8 +362,6 @@ def set_grid_values_3d(x, y, z, blank_vol, x1, x2, y1, y2, z1, z2, int_value, ma
     return new_vol
 
 
-# this is used
-# @timefn
 @jit(nopython=True)
 def set_grid_values_3d_rounded(x, y, z,
                                blank_vol,
