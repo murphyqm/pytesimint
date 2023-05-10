@@ -32,11 +32,29 @@ import pickle
 from . import define_matrix as dm
 
 
+def filtering(job_no, params, results_folder, iterations=None):
+    """Loads a job's parameters from file and loads and filters results
 
-def filtering(job_no, params, results_folder, iterations=[3, 48, 96, 120]):
+
+    Parameters
+    ----------
+    job_no : int
+        The row in the parameter dataframe to interrogate
+    params : pandas dataframe
+        Dataframe with parameters for model runs
+    results_folder : str
+        location where .npy binary results files are stored
+    iterations : list
+        Key timesteps to load
+
+    Returns
+    -------
+
+    """
+    if iterations is None:
+        iterations = [3, 48, 96, 120]
     example = params.iloc[job_no]
     run_no = example['id']
-    timestep = example['dt']
     Nx = example['Nx']
     Ny = example['Ny']
     Nz = example['Nz']
@@ -45,20 +63,20 @@ def filtering(job_no, params, results_folder, iterations=[3, 48, 96, 120]):
     Ly = example['Ly']
     Lz = example['Lz']
 
-    d_x = Lx/(Nx -1)
+    d_x = Lx / (Nx - 1)
 
     x_mid, y_mid, z_mid = example['x_mid'], example['y_mid'], example['z_mid']
     r_x, r_y, r_z = example['r_x'], example['r_y'], example['r_z']
-    expected_vol = (4.0/3.0)*3.14 *r_x * r_y * r_z
+    expected_vol = (4.0 / 3.0) * 3.14 * r_x * r_y * r_z
     int_nomask = 0
     ext_mask = 1
 
     x, y, z, blank_vol = dm.define_grid_3d(Nx, Ny, Nz, Lx, Ly, Lz)
 
     mask = dm.set_grid_values_3d_rounded(x, y, z, blank_vol,
-                                     x_mid, y_mid, z_mid,
-                                     r_x, r_y, r_z,
-                                     int_nomask, ext_mask)
+                                         x_mid, y_mid, z_mid,
+                                         r_x, r_y, r_z,
+                                         int_nomask, ext_mask)
 
     no_3mnths = iterations[0]
     no_4years = iterations[1]
@@ -73,7 +91,7 @@ def filtering(job_no, params, results_folder, iterations=[3, 48, 96, 120]):
     filename = f"{results_folder}/{run_no}/{run_no}_{no_3mnths}.npy"
     results = np.load(filename)
     masked_result_a = ma.masked_array(results, mask=mask)
-    total_size = (masked_result_a>100).sum()
+    total_size = (masked_result_a > 100).sum()
     actual_volume = total_size * d_x * d_x * d_x
     mean_it0 = masked_result_a.mean()
 
@@ -83,7 +101,7 @@ def filtering(job_no, params, results_folder, iterations=[3, 48, 96, 120]):
     mean_it3 = masked_result_b.mean()
 
     rounding = np.bitwise_or(masked_result_a > 1623.15, masked_result_b > 1573.15).sum()
-    percent_rounded = 100*rounding/total_size
+    percent_rounded = 100 * rounding / total_size
     print(percent_rounded)
 
     # Second two
@@ -95,7 +113,7 @@ def filtering(job_no, params, results_folder, iterations=[3, 48, 96, 120]):
     filename = f"{results_folder}/{run_no}/{run_no}_{no_4years}.npy"
     results = np.load(filename)
     masked_result_a = ma.masked_array(results, mask=mask)
-    total_size = (masked_result_a>100).sum()
+    total_size = (masked_result_a > 100).sum()
     mean_it1 = masked_result_a.mean()
 
     filename = f"{results_folder}/{run_no}/{run_no}_{no_8years}.npy"
@@ -104,15 +122,27 @@ def filtering(job_no, params, results_folder, iterations=[3, 48, 96, 120]):
     mean_it2 = masked_result_b.mean()
 
     geochem = np.bitwise_and(masked_result_a < 1573.15, masked_result_b < 1373.15).sum()
-    percent_geochem_preserved = 100*geochem/total_size
+    percent_geochem_preserved = 100 * geochem / total_size
     print(f"Percent geochem preserved: {percent_geochem_preserved}")
     print(f"Percent rounded: {percent_rounded}")
     print(f"r_x: {r_x}; r_y: {r_y}; r_z = {r_z}")
-    print(f"Expected volume: {expected_vol}; actual volume: {actual_volume}; difference: {actual_volume - expected_vol}")
+    print(
+        f"Expected volume: {expected_vol}; actual volume: {actual_volume}; difference: {actual_volume - expected_vol}")
     return run_no, percent_rounded, percent_geochem_preserved, r_x, r_y, expected_vol, actual_volume, mean_it0, mean_it1, mean_it2, mean_it3
 
 
 def temp_save_param(output, folder):
+    """
+
+    Parameters
+    ----------
+    output
+    folder
+
+    Returns
+    -------
+
+    """
     filepath = f"{folder}/{output[0]}_filtered.pickle"
     print(f"Saving params to {filepath}")
     with open(filepath, 'wb') as f:
@@ -120,6 +150,19 @@ def temp_save_param(output, folder):
 
 
 def load_param_pickles(params, savefolder, startnum, endnum):
+    """
+    Parameters
+    ----------
+    params
+    savefolder
+    startnum
+    endnum
+
+    Returns
+    -------
+
+    """
+
     param_dict = {}
     for i in range(startnum, endnum):
         example = params.iloc[i]
@@ -132,6 +175,17 @@ def load_param_pickles(params, savefolder, startnum, endnum):
 
 
 def param_dict_to_df(params, param_dict):
+    """
+
+    Parameters
+    ----------
+    params
+    param_dict
+
+    Returns
+    -------
+
+    """
     # define column names
     column_names = ["model_id", "percent_rounded",
                     "percent_geochem_preserved",
@@ -154,7 +208,19 @@ def param_dict_to_df(params, param_dict):
     return new_params
 
 
-def timeseries(job_no, params, results_folder,):
+def timeseries(job_no, params, results_folder, ):
+    """
+
+    Parameters
+    ----------
+    job_no
+    params
+    results_folder
+
+    Returns
+    -------
+
+    """
     example = params.iloc[job_no]
     run_no = example['id']
     timestep = example['dt']
@@ -162,10 +228,10 @@ def timeseries(job_no, params, results_folder,):
     save_iter = example["save_iter"]
     T_S = example["T_S"]
     T_L = example["T_L"]
-    
+
     it_list = np.arange(0, iterations, save_iter)
     seconds = list(it_list * timestep)
-    
+
     Nx = example['Nx']
     Ny = example['Ny']
     Nz = example['Nz']
@@ -174,11 +240,11 @@ def timeseries(job_no, params, results_folder,):
     Ly = example['Ly']
     Lz = example['Lz']
 
-    d_x = Lx/(Nx - 1)
+    d_x = Lx / (Nx - 1)
 
     x_mid, y_mid, z_mid = example['x_mid'], example['y_mid'], example['z_mid']
     r_x, r_y, r_z = example['r_x'], example['r_y'], example['r_z']
-    expected_vol = (4.0/3.0)*3.14 * r_x * r_y * r_z
+    expected_vol = (4.0 / 3.0) * 3.14 * r_x * r_y * r_z
     int_nomask = 0
     ext_mask = 1
 
@@ -196,26 +262,41 @@ def timeseries(job_no, params, results_folder,):
         filename = f"{results_folder}/{run_no}/{run_no}_{i}.npy"
         results = np.load(filename)
         masked_result = ma.masked_array(results, mask=mask)
-        total_size = (masked_result>100).sum()
+        total_size = (masked_result > 100).sum()
         mean_temp = masked_result.mean()
         mean_temps.append(mean_temp)
-        frac_solid = (masked_result<T_S).sum()
-        frac_liquid = (masked_result>T_L).sum()
-        percent_solid = 100*frac_solid/total_size
-        percent_liquid = 100*frac_liquid/total_size
+        frac_solid = (masked_result < T_S).sum()
+        frac_liquid = (masked_result > T_L).sum()
+        percent_solid = 100 * frac_solid / total_size
+        percent_liquid = 100 * frac_liquid / total_size
         solid_fraction.append(percent_solid)
         liquid_fraction.append(percent_liquid)
-    
-    results_dict = {}
-    results_dict["Mean temps"] = list(mean_temps)
-    results_dict["Solid frac"] = list(solid_fraction)
-    results_dict["Liquid fraction"] = list(liquid_fraction)
-    
+
+    results_dict = {
+        "Mean temps": list(mean_temps),
+        "Solid frac": list(solid_fraction),
+        "Liquid fraction": list(liquid_fraction),
+    }
     return results_dict, run_no
 
 
-def filtering_checking_bounds(job_no, params, results_folder, iterations=[3, 48, 96, 120]):
-    #""" Translate bounds by a certain amount up or down"""
+def filtering_checking_bounds(job_no, params, results_folder, iterations=None):
+    """
+
+    Parameters
+    ----------
+    job_no
+    params
+    results_folder
+    iterations
+
+    Returns
+    -------
+
+    """
+    if iterations is None:
+        iterations = [3, 48, 96, 120]
+    # """ Translate bounds by a certain amount up or down"""
     example = params.iloc[job_no]
     run_no = example['id']
     timestep = example['dt']
@@ -227,7 +308,7 @@ def filtering_checking_bounds(job_no, params, results_folder, iterations=[3, 48,
     Ly = example['Ly']
     Lz = example['Lz']
 
-    d_x = Lx/(Nx - 1)
+    d_x = Lx / (Nx - 1)
 
     temps = np.array([1623.15, 1573.15, 1373.15])
     temps_p10pc = temps + (temps * 0.01)
@@ -237,7 +318,7 @@ def filtering_checking_bounds(job_no, params, results_folder, iterations=[3, 48,
 
     x_mid, y_mid, z_mid = example['x_mid'], example['y_mid'], example['z_mid']
     r_x, r_y, r_z = example['r_x'], example['r_y'], example['r_z']
-    expected_vol = (4.0/3.0)*3.14 * r_x * r_y * r_z
+    expected_vol = (4.0 / 3.0) * 3.14 * r_x * r_y * r_z
     int_nomask = 0
     ext_mask = 1
 
@@ -271,19 +352,19 @@ def filtering_checking_bounds(job_no, params, results_folder, iterations=[3, 48,
     mean_it3 = masked_result_b.mean()
 
     rounding = np.bitwise_or(masked_result_a > temps[0], masked_result_b > temps[1]).sum()
-    percent_rounded = 100*rounding/total_size
+    percent_rounded = 100 * rounding / total_size
 
     rounding_p10pc = np.bitwise_or(masked_result_a > temps_p10pc[0], masked_result_b > temps_p10pc[1]).sum()
-    percent_rounded_p10pc = 100*rounding_p10pc/total_size
+    percent_rounded_p10pc = 100 * rounding_p10pc / total_size
 
     rounding_m10pc = np.bitwise_or(masked_result_a > temps_m10pc[0], masked_result_b > temps_m10pc[1]).sum()
-    percent_rounded_m10pc = 100*rounding_m10pc/total_size
+    percent_rounded_m10pc = 100 * rounding_m10pc / total_size
 
     rounding_p50K = np.bitwise_or(masked_result_a > temps_p50K[0], masked_result_b > temps_p50K[1]).sum()
-    percent_rounded_p50K = 100*rounding_p50K/total_size
+    percent_rounded_p50K = 100 * rounding_p50K / total_size
 
     rounding_m50K = np.bitwise_or(masked_result_a > temps_m50K[0], masked_result_b > temps_m50K[1]).sum()
-    percent_rounded_m50K = 100*rounding_m50K/total_size
+    percent_rounded_m50K = 100 * rounding_m50K / total_size
 
     print(percent_rounded)
 
@@ -296,7 +377,7 @@ def filtering_checking_bounds(job_no, params, results_folder, iterations=[3, 48,
     filename = f"{results_folder}/{run_no}/{run_no}_{no_4years}.npy"
     results = np.load(filename)
     masked_result_a = ma.masked_array(results, mask=mask)
-    total_size = (masked_result_a>100).sum()
+    total_size = (masked_result_a > 100).sum()
     mean_it1 = masked_result_a.mean()
 
     filename = f"{results_folder}/{run_no}/{run_no}_{no_8years}.npy"
@@ -305,24 +386,25 @@ def filtering_checking_bounds(job_no, params, results_folder, iterations=[3, 48,
     mean_it2 = masked_result_b.mean()
 
     geochem = np.bitwise_and(masked_result_a < temps[1], masked_result_b < temps[2]).sum()
-    percent_geochem_preserved = 100*geochem/total_size
+    percent_geochem_preserved = 100 * geochem / total_size
 
     geochem_p10pc = np.bitwise_and(masked_result_a < temps_p10pc[1], masked_result_b < temps_p10pc[2]).sum()
-    percent_geochem_preserved_p10pc = 100*geochem_p10pc/total_size
+    percent_geochem_preserved_p10pc = 100 * geochem_p10pc / total_size
 
     geochem_m10pc = np.bitwise_and(masked_result_a < temps_m10pc[1], masked_result_b < temps_m10pc[2]).sum()
-    percent_geochem_preserved_m10pc = 100*geochem_m10pc/total_size
+    percent_geochem_preserved_m10pc = 100 * geochem_m10pc / total_size
 
     geochem_p50K = np.bitwise_and(masked_result_a < temps_p50K[1], masked_result_b < temps_p50K[2]).sum()
-    percent_geochem_preserved_p50K = 100*geochem_p50K/total_size
+    percent_geochem_preserved_p50K = 100 * geochem_p50K / total_size
 
     geochem_m50K = np.bitwise_and(masked_result_a < temps_m50K[1], masked_result_b < temps_m50K[2]).sum()
-    percent_geochem_preserved_m50K = 100*geochem_m50K/total_size
+    percent_geochem_preserved_m50K = 100 * geochem_m50K / total_size
 
     print(f"Percent geochem preserved: {percent_geochem_preserved}")
     print(f"Percent rounded: {percent_rounded}")
     print(f"r_x: {r_x}; r_y: {r_y}; r_z = {r_z}")
-    print(f"Expected volume: {expected_vol}; actual volume: {actual_volume}; difference: {actual_volume - expected_vol}")
+    print(
+        f"Expected volume: {expected_vol}; actual volume: {actual_volume}; difference: {actual_volume - expected_vol}")
     return (run_no,
             percent_rounded,
             percent_geochem_preserved,
@@ -332,14 +414,29 @@ def filtering_checking_bounds(job_no, params, results_folder, iterations=[3, 48,
             mean_it0,
             mean_it1,
             mean_it2,
-            mean_it3, percent_rounded_p10pc, percent_rounded_m10pc, percent_rounded_p50K , percent_rounded_m50K,
-           percent_geochem_preserved_p10pc, percent_geochem_preserved_m10pc, percent_geochem_preserved_p50K , percent_geochem_preserved_m50K)
+            mean_it3, percent_rounded_p10pc, percent_rounded_m10pc, percent_rounded_p50K, percent_rounded_m50K,
+            percent_geochem_preserved_p10pc, percent_geochem_preserved_m10pc, percent_geochem_preserved_p50K,
+            percent_geochem_preserved_m50K)
 
 
+def filtering_expand_bounds(job_no, params, results_folder, iterations=None):
+    """
 
-def filtering_expand_bounds(job_no, params, results_folder, iterations=[3, 48, 96, 120]):
+    Parameters
+    ----------
+    job_no
+    params
+    results_folder
+    iterations
+
+    Returns
+    -------
+
+    """
     # Expand or contract bounds by a certain amount
     # ignore this, does the same as previous function
+    if iterations is None:
+        iterations = [3, 48, 96, 120]
     example = params.iloc[job_no]
     run_no = example['id']
     timestep = example['dt']
@@ -351,7 +448,7 @@ def filtering_expand_bounds(job_no, params, results_folder, iterations=[3, 48, 9
     Ly = example['Ly']
     Lz = example['Lz']
 
-    d_x = Lx/(Nx - 1)
+    d_x = Lx / (Nx - 1)
 
     temps = np.array([1623.15, 1573.15, 1373.15])
     temps_p10pc = temps + (temps * 0.01)
@@ -361,7 +458,7 @@ def filtering_expand_bounds(job_no, params, results_folder, iterations=[3, 48, 9
 
     x_mid, y_mid, z_mid = example['x_mid'], example['y_mid'], example['z_mid']
     r_x, r_y, r_z = example['r_x'], example['r_y'], example['r_z']
-    expected_vol = (4.0/3.0)*3.14 * r_x * r_y * r_z
+    expected_vol = (4.0 / 3.0) * 3.14 * r_x * r_y * r_z
     int_nomask = 0
     ext_mask = 1
 
@@ -395,20 +492,20 @@ def filtering_expand_bounds(job_no, params, results_folder, iterations=[3, 48, 9
     mean_it3 = masked_result_b.mean()
 
     rounding = np.bitwise_or(masked_result_a > temps[0], masked_result_b > temps[1]).sum()
-    percent_rounded = 100*rounding/total_size
+    percent_rounded = 100 * rounding / total_size
 
     # Expand bounds by 10 pc
     rounding_p10pc = np.bitwise_or(masked_result_a > temps_p10pc[0], masked_result_b > temps_p10pc[1]).sum()
-    percent_rounded_p10pc = 100*rounding_p10pc/total_size
+    percent_rounded_p10pc = 100 * rounding_p10pc / total_size
 
     rounding_m10pc = np.bitwise_or(masked_result_a > temps_m10pc[0], masked_result_b > temps_m10pc[1]).sum()
-    percent_rounded_m10pc = 100*rounding_m10pc/total_size
+    percent_rounded_m10pc = 100 * rounding_m10pc / total_size
 
     rounding_p50K = np.bitwise_or(masked_result_a > temps_p50K[0], masked_result_b > temps_p50K[1]).sum()
-    percent_rounded_p50K = 100*rounding_p50K/total_size
+    percent_rounded_p50K = 100 * rounding_p50K / total_size
 
     rounding_m50K = np.bitwise_or(masked_result_a > temps_m50K[0], masked_result_b > temps_m50K[1]).sum()
-    percent_rounded_m50K = 100*rounding_m50K/total_size
+    percent_rounded_m50K = 100 * rounding_m50K / total_size
 
     print(percent_rounded)
 
@@ -421,7 +518,7 @@ def filtering_expand_bounds(job_no, params, results_folder, iterations=[3, 48, 9
     filename = f"{results_folder}/{run_no}/{run_no}_{no_4years}.npy"
     results = np.load(filename)
     masked_result_a = ma.masked_array(results, mask=mask)
-    total_size = (masked_result_a>100).sum()
+    total_size = (masked_result_a > 100).sum()
     mean_it1 = masked_result_a.mean()
 
     filename = f"{results_folder}/{run_no}/{run_no}_{no_8years}.npy"
@@ -430,24 +527,25 @@ def filtering_expand_bounds(job_no, params, results_folder, iterations=[3, 48, 9
     mean_it2 = masked_result_b.mean()
 
     geochem = np.bitwise_and(masked_result_a < temps[1], masked_result_b < temps[2]).sum()
-    percent_geochem_preserved = 100*geochem/total_size
+    percent_geochem_preserved = 100 * geochem / total_size
 
     geochem_p10pc = np.bitwise_and(masked_result_a < temps_p10pc[1], masked_result_b < temps_p10pc[2]).sum()
-    percent_geochem_preserved_p10pc = 100*geochem_p10pc/total_size
+    percent_geochem_preserved_p10pc = 100 * geochem_p10pc / total_size
 
     geochem_m10pc = np.bitwise_and(masked_result_a < temps_m10pc[1], masked_result_b < temps_m10pc[2]).sum()
-    percent_geochem_preserved_m10pc = 100*geochem_m10pc/total_size
+    percent_geochem_preserved_m10pc = 100 * geochem_m10pc / total_size
 
     geochem_p50K = np.bitwise_and(masked_result_a < temps_p50K[1], masked_result_b < temps_p50K[2]).sum()
-    percent_geochem_preserved_p50K = 100*geochem_p50K/total_size
+    percent_geochem_preserved_p50K = 100 * geochem_p50K / total_size
 
     geochem_m50K = np.bitwise_and(masked_result_a < temps_m50K[1], masked_result_b < temps_m50K[2]).sum()
-    percent_geochem_preserved_m50K = 100*geochem_m50K/total_size
+    percent_geochem_preserved_m50K = 100 * geochem_m50K / total_size
 
     print(f"Percent geochem preserved: {percent_geochem_preserved}")
     print(f"Percent rounded: {percent_rounded}")
     print(f"r_x: {r_x}; r_y: {r_y}; r_z = {r_z}")
-    print(f"Expected volume: {expected_vol}; actual volume: {actual_volume}; difference: {actual_volume - expected_vol}")
+    print(
+        f"Expected volume: {expected_vol}; actual volume: {actual_volume}; difference: {actual_volume - expected_vol}")
     return (run_no,
             percent_rounded,
             percent_geochem_preserved,
@@ -457,11 +555,23 @@ def filtering_expand_bounds(job_no, params, results_folder, iterations=[3, 48, 9
             mean_it0,
             mean_it1,
             mean_it2,
-            mean_it3, percent_rounded_p10pc, percent_rounded_m10pc, percent_rounded_p50K , percent_rounded_m50K,
-           percent_geochem_preserved_p10pc, percent_geochem_preserved_m10pc, percent_geochem_preserved_p50K , percent_geochem_preserved_m50K)
+            mean_it3, percent_rounded_p10pc, percent_rounded_m10pc, percent_rounded_p50K, percent_rounded_m50K,
+            percent_geochem_preserved_p10pc, percent_geochem_preserved_m10pc, percent_geochem_preserved_p50K,
+            percent_geochem_preserved_m50K)
 
 
 def param_dict_to_df_checking_bounds(params, param_dict):
+    """
+
+    Parameters
+    ----------
+    params
+    param_dict
+
+    Returns
+    -------
+
+    """
     # define column names
     column_names = ["model_id", "percent_rounded",
                     "percent_geochem_preserved",
