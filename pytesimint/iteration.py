@@ -9,11 +9,6 @@ import numpy as np
 from . import define_matrix as dm
 
 
-def example_func():
-    dp = dm.spacing(5, 5)
-    return dp
-
-
 def v7_iter_func(initial_temps,
                  initial_diffs: object,
                  location_of_intrusion,
@@ -144,7 +139,9 @@ def v8_iter_func(initial_temps,
                  iterations=4,
                  save_iter=1,
                  fileID="results",
-                 iter_list=[3, 48, 96, 120],):
+                 iter_list=None,):
+    if iter_list is None:
+        iter_list = [3, 48, 96, 120]
     full_soln = initial_temps
     assert dx == dy == dz
 
@@ -245,6 +242,6 @@ def v8_iter_func(initial_temps,
                 full_soln[i, j, :] = solution.flatten()
         # print(solution)
         filename = f"{folder}{fileID}_{h}"
-        if h == iter_list[0] or h == iter_list[1] or h == iter_list[2] or h == iter_list[3]:
+        if h in [iter_list[0], iter_list[1], iter_list[2], iter_list[3]]:
             print(f"saving test_{h}")
             np.save(filename, full_soln)
