@@ -9,7 +9,7 @@ by murphyqm
 
 # from context import effective_diffusivity as ed
 
-import setup_path
+# import setup_path
 import pytesimint.effective_diffusivity as ed
 import pytest
 

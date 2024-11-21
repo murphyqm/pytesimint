@@ -9,7 +9,7 @@ import numpy as np
 
 # from context import iteration as it
 
-import setup_path
+# import setup_path
 import pytesimint.iteration as it
 import pytest
 
