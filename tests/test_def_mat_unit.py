@@ -8,7 +8,7 @@ by murphyqm
 import numpy as np
 
 # from context import define_matrix as dm
-import setup_path
+# import setup_path
 import pytesimint.define_matrix as dm
 
 import pytest
